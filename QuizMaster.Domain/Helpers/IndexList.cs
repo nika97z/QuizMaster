@@ -39,14 +39,5 @@ namespace QuizMaster.Domain.Helpers
 			}
 			return true;
 		}
-
-		public static List<int> Parse(string? text)
-		{
-			if (!TryParse(text, out var values))
-			{
-				throw new FormatException($"Corrupted index list: '{text}'.");
-			}
-			return values;
-		}
 	}
 }

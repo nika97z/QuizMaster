@@ -33,9 +33,10 @@ namespace QuizMaster.UI.Menus
 				Console.WriteLine("5) Leaderboards");
 				Console.WriteLine("6) Recent log entries");
 				Console.WriteLine("7) Create a quiz with AI");
+				Console.WriteLine("8) Delete a student account");
 				Console.WriteLine("0) Log out");
 
-				switch (ConsoleHelper.ReadInt("Choose", 0, 7))
+				switch (ConsoleHelper.ReadInt("Choose", 0, 8))
 				{
 					case 1:
 						_safe.Execute(() => ShowMyQuizzes(), _user.Id);
@@ -57,6 +58,9 @@ namespace QuizMaster.UI.Menus
 						break;
 					case 7:
 						_safe.Execute(CreateQuizWithAi, _user.Id);
+						break;
+					case 8:
+						_safe.Execute(DeleteStudent, _user.Id);
 						break;
 					case 0:
 						return;
@@ -205,6 +209,39 @@ namespace QuizMaster.UI.Menus
 				new[] { "Time", "Event", "Message" },
 				logs.Select(l => new[] { l.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"), l.EventType.ToString(), l.Message }),
 				maxColumnWidth: 90);
+		}
+
+		private void DeleteStudent()
+		{
+			var students = _services.Get<IUserService, List<UserDTO>>(s => s.GetStudents(_user.Id));
+			ConsoleHelper.Header("Students");
+			if (students.Count == 0)
+			{
+				ConsoleHelper.Info("There are no student accounts.");
+				return;
+			}
+			ConsoleHelper.PrintTable(
+				new[] { "Id", "Username", "Email" },
+				students.Select(s => new[] { s.Id.ToString(), s.Username, s.Email }));
+
+			var studentId = ConsoleHelper.ReadInt("Student id to delete (0 = back)", 0, int.MaxValue);
+			if (studentId == 0)
+			{
+				return;
+			}
+			var student = students.FirstOrDefault(s => s.Id == studentId);
+			if (student == null)
+			{
+				ConsoleHelper.Error("There is no student with that id.");
+				return;
+			}
+			if (!ConsoleHelper.Confirm($"Delete {student.Username} and all of their attempts permanently"))
+			{
+				return;
+			}
+
+			_services.Do<IUserService>(s => s.DeleteStudent(_user.Id, studentId));
+			ConsoleHelper.Success($"The account of {student.Username} was deleted.");
 		}
 	}
 }

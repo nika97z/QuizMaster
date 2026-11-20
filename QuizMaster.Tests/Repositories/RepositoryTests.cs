@@ -155,5 +155,68 @@ namespace QuizMaster.Tests.Repositories
 			Assert.Single(published);
 			Assert.Equal(2, new QuizRepository(context).GetQuizzesByLecturer(lecturer.Id).Count);
 		}
+
+		[Fact]
+		public void DeleteStudent_RemovesTheStudentsAttemptsAndAnswers_AndNothingElse()
+		{
+			var options = NewDatabase();
+			int lukaId;
+			using (var context = new QuizMasterDbContext(options))
+			{
+				var luka = new Student { Username = "luka", Email = "luka@test.ge" };
+				var nino = new Student { Username = "nino", Email = "nino@test.ge" };
+				var quiz = NewQuiz(new Lecturer { Username = "lela", Email = "lela@test.ge" });
+				context.Users.AddRange(luka, nino);
+				context.Quizzes.Add(quiz);
+				context.SaveChanges();
+
+				foreach (var student in new[] { luka, nino })
+				{
+					var attempt = new Attempt(quiz, student);
+					attempt.Start(DateTime.Now, quiz.Questions.Select(q => q.Id));
+					attempt.SubmitAnswer(quiz.Questions.OfType<SingleChoiceQuestion>().Single(), new[] { 2 });
+					attempt.Finish(quiz.PassPercent);
+					context.Attempts.Add(attempt);
+				}
+				context.SaveChanges();
+				lukaId = luka.Id;
+			}
+
+			// A new context, like the one the app opens for each action.
+			using (var context = new QuizMasterDbContext(options))
+			{
+				var repository = new UserRepository(context);
+				var luka = repository.GetStudentWithAttempts(lukaId);
+				Assert.NotNull(luka);
+				Assert.Single(luka!.Attempts);
+				repository.DeleteStudent(luka);
+				context.SaveChanges();
+			}
+
+			using (var context = new QuizMasterDbContext(options))
+			{
+				var student = Assert.Single(context.Users.OfType<Student>());
+				Assert.Equal("nino", student.Username);
+				var attempt = Assert.Single(context.Attempts);
+				Assert.Equal(student.Id, attempt.StudentId);
+				Assert.Single(context.AnswerRecords);
+				Assert.Single(context.Quizzes);
+				Assert.Single(context.Users.OfType<Lecturer>());
+			}
+		}
+
+		[Fact]
+		public void GetStudentWithAttempts_IgnoresLecturers_AndGetAllStudentsListsOnlyStudents()
+		{
+			using var context = new QuizMasterDbContext(NewDatabase());
+			var lecturer = new Lecturer { Username = "lela", Email = "lela@test.ge" };
+			context.Users.AddRange(lecturer, new Student { Username = "nino", Email = "nino@test.ge" },
+				new Student { Username = "luka", Email = "luka@test.ge" });
+			context.SaveChanges();
+			var repository = new UserRepository(context);
+
+			Assert.Null(repository.GetStudentWithAttempts(lecturer.Id));
+			Assert.Equal(new[] { "luka", "nino" }, repository.GetAllStudents().Select(s => s.Username));
+		}
 	}
 }

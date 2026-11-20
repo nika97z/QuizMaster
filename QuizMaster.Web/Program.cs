@@ -42,10 +42,10 @@ namespace QuizMaster.Web
 			{
 				connectionString = QuizMasterDbContext.DefaultConnectionString;
 			}
-			var smtpSettings = builder.Configuration.GetSection("Smtp").Get<SmtpSettings>() ?? new SmtpSettings();
+			var emailService = builder.Configuration.GetSection("Smtp").Get<EmailService>() ?? new EmailService();
 			var openAiSettings = builder.Configuration.GetSection("OpenAI").Get<OpenAiSettings>() ?? new OpenAiSettings();
 
-			AddQuizMasterServices(builder.Services, connectionString, smtpSettings, openAiSettings);
+			AddQuizMasterServices(builder.Services, connectionString, emailService, openAiSettings);
 			AddWebServices(builder.Services);
 
 			var app = builder.Build();
@@ -55,7 +55,7 @@ namespace QuizMaster.Web
 			{
 				return 1;
 			}
-			if (!smtpSettings.IsConfigured)
+			if (!emailService.IsConfigured)
 			{
 				Console.WriteLine("SMTP is not configured, so result emails are printed in this console window.");
 			}
@@ -87,7 +87,7 @@ namespace QuizMaster.Web
 		/// <summary>
 		/// The same registrations as BuildServices in QuizMaster.UI/Program.cs.
 		/// </summary>
-		private static void AddQuizMasterServices(IServiceCollection services, string connectionString, SmtpSettings smtpSettings,
+		private static void AddQuizMasterServices(IServiceCollection services, string connectionString, EmailService emailService,
 			OpenAiSettings openAiSettings)
 		{
 			// The factory lets the logger use its own short-lived context; everything else gets one context per request.
@@ -103,15 +103,8 @@ namespace QuizMaster.Web
 			services.AddScoped<IAttemptRepository, AttemptRepository>();
 
 			services.AddSingleton<IAppLogger, DbLogger>();
-			services.AddSingleton(smtpSettings);
-			if (smtpSettings.IsConfigured)
-			{
-				services.AddSingleton<IEmailService, SmtpEmailService>();
-			}
-			else
-			{
-				services.AddSingleton<IEmailService, ConsoleEmailService>();
-			}
+			// Without an SMTP host the email service prints result emails to the console.
+			services.AddSingleton<IEmailService>(emailService);
 
 			// Without an API key the generator reports that AI quiz generation isn't set up.
 			services.AddSingleton(openAiSettings);
@@ -166,7 +159,6 @@ namespace QuizMaster.Web
 				using var scope = provider.CreateScope();
 				var context = scope.ServiceProvider.GetRequiredService<QuizMasterDbContext>();
 				context.Database.Migrate();
-				DbSeeder.Seed(context);
 				return true;
 			}
 			catch (Exception ex)

@@ -109,6 +109,27 @@ namespace QuizMaster.Application.Services.Implementations
 			return _mapper.Map<UserDTO>(user);
 		}
 
+		public List<UserDTO> GetStudents(int lecturerId)
+		{
+			AccessGuard.RequireLecturer(_userRepository, lecturerId);
+			return _mapper.Map<List<UserDTO>>(_userRepository.GetAllStudents());
+		}
+
+		public void DeleteStudent(int lecturerId, int studentId)
+		{
+			AccessGuard.RequireLecturer(_userRepository, lecturerId);
+			AccessGuard.RequireValidId(studentId, "Student id");
+			var student = _userRepository.GetStudentWithAttempts(studentId)
+				?? throw new NotFoundException($"Student {studentId} was not found.");
+
+			var attemptCount = student.Attempts.Count;
+			_userRepository.DeleteStudent(student);
+			_unitOfWork.SaveChanges();
+
+			_logger.Log(LogEventType.StudentDeleted,
+				$"Student '{student.Username}' ({student.Email}) was deleted with {attemptCount} attempt(s).", lecturerId);
+		}
+
 		// Not used while email checking is turned off (see Register). Kept so it can be switched back on.
 		private static bool IsValidEmail(string email)
 		{

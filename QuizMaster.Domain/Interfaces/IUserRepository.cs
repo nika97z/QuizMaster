@@ -9,5 +9,7 @@ namespace QuizMaster.Domain.Interfaces
 		User? GetUserByUsername(string username);
 		User? GetUserByEmail(string email);
 		List<Student> GetAllStudents();
+		Student? GetStudentWithAttempts(int studentId);
+		void DeleteStudent(Student student);
 	}
 }

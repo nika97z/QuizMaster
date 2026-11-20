@@ -1,0 +1,42 @@
+@page
+@model QuizMaster.Web.Pages.Lecturer.StudentsModel
+@{
+	ViewData["Title"] = "Students";
+}
+
+<h1 class="h3 mb-3">Students</h1>
+
+@if (Model.Students.Count == 0)
+{
+	<p>There are no student accounts.</p>
+}
+else
+{
+	<p class="text-muted">Deleting a student also deletes their attempts and results. It can't be undone.</p>
+	<div class="table-responsive">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>Username</th>
+					<th>Email</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var student in Model.Students)
+				{
+					<tr>
+						<td>@student.Username</td>
+						<td>@student.Email</td>
+						<td class="text-end">
+							<form method="post" asp-page-handler="Delete" asp-route-studentId="@student.Id"
+								  data-confirm="@($"Delete {student.Username} and all of their attempts permanently?")">
+								<button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+							</form>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

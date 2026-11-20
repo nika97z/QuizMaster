@@ -43,10 +43,10 @@ namespace QuizMaster.UI
 			{
 				connectionString = QuizMasterDbContext.DefaultConnectionString;
 			}
-			var smtpSettings = configuration.GetSection("Smtp").Get<SmtpSettings>() ?? new SmtpSettings();
+			var emailService = configuration.GetSection("Smtp").Get<EmailService>() ?? new EmailService();
 			var openAiSettings = configuration.GetSection("OpenAI").Get<OpenAiSettings>() ?? new OpenAiSettings();
 
-			using var provider = BuildServices(connectionString, smtpSettings, openAiSettings);
+			using var provider = BuildServices(connectionString, emailService, openAiSettings);
 			if (!InitializeDatabase(provider))
 			{
 				return 1;
@@ -54,7 +54,7 @@ namespace QuizMaster.UI
 
 			try
 			{
-				new QuizMasterSystem(provider, smtpSettings.IsConfigured).Run();
+				new QuizMasterSystem(provider, emailService.IsConfigured).Run();
 			}
 			catch (EndOfInputException)
 			{
@@ -64,7 +64,7 @@ namespace QuizMaster.UI
 			return 0;
 		}
 
-		private static ServiceProvider BuildServices(string connectionString, SmtpSettings smtpSettings, OpenAiSettings openAiSettings)
+		private static ServiceProvider BuildServices(string connectionString, EmailService emailService, OpenAiSettings openAiSettings)
 		{
 			var services = new ServiceCollection();
 			services.AddLogging();
@@ -82,15 +82,8 @@ namespace QuizMaster.UI
 			services.AddScoped<IAttemptRepository, AttemptRepository>();
 
 			services.AddSingleton<IAppLogger, DbLogger>();
-			services.AddSingleton(smtpSettings);
-			if (smtpSettings.IsConfigured)
-			{
-				services.AddSingleton<IEmailService, SmtpEmailService>();
-			}
-			else
-			{
-				services.AddSingleton<IEmailService, ConsoleEmailService>();
-			}
+			// Without an SMTP host the email service prints result emails to the console.
+			services.AddSingleton<IEmailService>(emailService);
 
 			// Without an API key the generator reports that AI quiz generation isn't set up.
 			services.AddSingleton(openAiSettings);
@@ -117,7 +110,6 @@ namespace QuizMaster.UI
 				using var scope = provider.CreateScope();
 				var context = scope.ServiceProvider.GetRequiredService<QuizMasterDbContext>();
 				context.Database.Migrate();
-				DbSeeder.Seed(context);
 				return true;
 			}
 			catch (Exception ex)

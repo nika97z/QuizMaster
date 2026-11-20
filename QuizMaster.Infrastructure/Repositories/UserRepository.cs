@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using QuizMaster.Domain.Interfaces;
 using QuizMaster.Domain.Models.Entities;
 using QuizMaster.Infrastructure.Data;
@@ -39,6 +40,23 @@ namespace QuizMaster.Infrastructure.Repositories
 		public List<Student> GetAllStudents()
 		{
 			return _context.Users.OfType<Student>().OrderBy(s => s.Username).ToList();
+		}
+
+		// Only finds students, so a lecturer's id returns null. Loads the attempts and their answers for DeleteStudent.
+		public Student? GetStudentWithAttempts(int studentId)
+		{
+			return _context.Users.OfType<Student>()
+				.Include(s => s.Attempts)
+				.ThenInclude(a => a.Answers)
+				.FirstOrDefault(s => s.Id == studentId);
+		}
+
+		// The database doesn't allow deleting a student who still has attempts (Restrict), so the attempts go first.
+		// Their answers are deleted with them (cascade).
+		public void DeleteStudent(Student student)
+		{
+			_context.Attempts.RemoveRange(student.Attempts);
+			_context.Users.Remove(student);
 		}
 	}
 }

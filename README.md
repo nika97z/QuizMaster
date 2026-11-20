@@ -10,10 +10,10 @@ It uses the same layered architecture as FitZone, with **DTOs** and **SQL Server
 |---|---|
 | `QuizMaster.Domain` | Entities with behaviour, enums, DTOs (`Models/DTOs/<X>DTOs`), repository/service interfaces, `QuestionFactory`, domain exceptions |
 | `QuizMaster.Application` | Services (`Services/Interfaces` + `Implementations`, including `QuizGenerationService` for AI quizzes), AutoMapper `Profiles`, exceptions |
-| `QuizMaster.Infrastructure` | `QuizMasterDbContext`, EF configurations, repositories, `UnitOfWork`, `DbLogger`, email services, `Ai/OpenAiQuizGenerator`, seeder, migrations |
-| `QuizMaster.UI` | Console app: `Program.cs` (DI, config, migrate, seed), `QuizMasterSystem`, lecturer/student menus |
-| `QuizMaster.Web` | Web app (Razor Pages): `Program.cs` (the same DI, config, migrate and seed, plus cookie login), `Pages/Account`, `Pages/Student`, `Pages/Lecturer`, `Pages/Leaderboards`, `Helpers` |
-| `QuizMaster.Tests` | 113 tests: domain rules, services (Moq), repositories (EF Core InMemory), the OpenAI generator (fake HTTP handler, no real calls) |
+| `QuizMaster.Infrastructure` | `QuizMasterDbContext`, EF configurations, repositories, `UnitOfWork`, `DbLogger`, `EmailService`, `Ai/OpenAiQuizGenerator`, migrations |
+| `QuizMaster.UI` | Console app: `Program.cs` (DI, config, migrate), `QuizMasterSystem`, lecturer/student menus |
+| `QuizMaster.Web` | Web app (Razor Pages): `Program.cs` (the same DI, config and migrate, plus cookie login), `Pages/Account`, `Pages/Student`, `Pages/Lecturer`, `Pages/Leaderboards`, `Helpers` |
+| `QuizMaster.Tests` | 120 tests: domain rules, services (Moq), repositories (EF Core InMemory), the OpenAI generator (fake HTTP handler, no real calls) |
 
 As in FitZone: repositories never call `SaveChanges()` (services do, through `IUnitOfWork`), services map entities to DTOs with AutoMapper, and everything is wired with `ServiceCollection`. Both apps register the same services in their own `Program.cs`.
 
@@ -31,16 +31,7 @@ As in FitZone: repositories never call `SaveChanges()` (services do, through `IU
    dotnet run --project QuizMaster.UI
    ```
 
-On startup the app creates the `QuizMasterDb` database, applies the migrations and adds sample data.
-
-**Seeded logins**
-
-| User | Password | Role |
-|---|---|---|
-| `lela_lecturer` | `securePass` | Lecturer |
-| `luka_student` | `pass123` | Student (has the sample attempt: 16/20, 80%, Passed) |
-
-New users can register as a student or a lecturer.
+On startup the app creates the `QuizMasterDb` database and applies the migrations. A new database is empty: register a lecturer to create and publish quizzes, and a student to take them. Anyone can register as either.
 
 ## Web app
 
@@ -50,9 +41,9 @@ dotnet run --project QuizMaster.Web
 
 Then open http://localhost:5209 (the `http` profile in `QuizMaster.Web/Properties/launchSettings.json`; the `https` profile uses https://localhost:7081). In Visual Studio, set **QuizMaster.Web** as the startup project and press F5.
 
-- It uses the same `QuizMasterDb` database as the console app (connection string in `QuizMaster.Web/appsettings.json`), and it also migrates and seeds it on startup, so either app can be started first and both can run at the same time.
-- Log in with the seeded logins above, or register as a student or a lecturer.
-- Students: quiz catalog, taking a quiz one question at a time with a countdown, result (with the certificate code on a pass), my attempts, leaderboards. Lecturers: my quizzes, create and edit quizzes, add/edit/remove questions, publish/close/delete, statistics, leaderboards, recent log entries.
+- It uses the same `QuizMasterDb` database as the console app (connection string in `QuizMaster.Web/appsettings.json`), and it also migrates it on startup, so either app can be started first and both can run at the same time.
+- Register as a student or a lecturer, then log in.
+- Students: quiz catalog, taking a quiz one question at a time with a countdown, result (with the certificate code on a pass), my attempts, leaderboards. Lecturers: my quizzes, create and edit quizzes, add/edit/remove questions, publish/close/delete, statistics, leaderboards, students (delete a student account), recent log entries.
 - Without SMTP settings, result emails are printed in the web app's console window. SMTP settings for the web app go in `QuizMaster.Web/appsettings.Local.json` (same format as below).
 - A started attempt is kept in the database, so a student can reload the page, close it, or come back later from **My attempts** while there is time left.
 
@@ -77,7 +68,7 @@ A lecturer can let AI write a quiz: on the web app's **Create quiz** page ("Let 
 
 ## Email (SMTP)
 
-When `Smtp:Host` is empty, result emails are printed in the console, so the app works without any setup. To send real emails, put the settings in `QuizMaster.UI/appsettings.Local.json` (ignored by git), so the password never gets committed. The web app reads `QuizMaster.Web/appsettings.Local.json` the same way:
+`EmailService` sends the result emails. When `Smtp:Host` is empty, it prints them in the console instead, so the app works without any setup. To send real emails, put the settings in `QuizMaster.UI/appsettings.Local.json` (ignored by git), so the password never gets committed. The web app reads `QuizMaster.Web/appsettings.Local.json` the same way:
 
 ```json
 {
@@ -138,17 +129,18 @@ Or use Test Explorer in Visual Studio. `global.json` switches `dotnet test` to t
 | Lecturer: create, edit, publish/close, delete quizzes; add questions with points | `QuizService`, `QuestionService`, `QuizEditor`; web: `Lecturer/Quizzes`, `CreateQuiz`, `EditQuiz`, `Manage`, `Question` |
 | Question validation before publishing | `Quiz.ValidateForPublish` / `Publish`, `Question.Validate()` overrides, `QuestionFactory` |
 | LINQ: `OrderByDescending` leaderboard, `Average`, group by topic and quiz, best student | `StatisticsService`; web: `Lecturer/Statistics`, `Leaderboards` |
-| SMTP result with certificate code | `AttemptService.TrySendResultEmail`, `ResultEmailBuilder`, `SmtpEmailService` / `ConsoleEmailService` |
+| SMTP result with certificate code | `AttemptService.TrySendResultEmail`, `ResultEmailBuilder`, `EmailService` |
 | Logging (start, answer, finish, score, cancel, quiz changes, errors) | `IAppLogger` → `DbLogger` (`LogEntries` table); `SafeExecutor` logs errors (web: `QuizMasterPageModel.HandleError`); lecturer menu option 6 and the web page `Lecturer/Logs` show the log |
 | Bonus: random question and option order | `AttemptService.StartAttempt` and `ToShuffledDto`; answers use original option positions, so grading stays correct |
 | Extra: AI writes a quiz on a chosen or random subject | `QuizGenerationService`, `IQuizGenerator` → `OpenAiQuizGenerator`; web: `Lecturer/CreateQuiz`; console: `LecturerMenu.CreateQuizWithAi` |
+| Extra: a lecturer deletes a student account | `UserService.DeleteStudent` → `UserRepository.DeleteStudent` (the student's attempts and answers are deleted too); console: lecturer menu option 8; web: `Lecturer/Students` |
 | Inheritance | `Question` → 3 types, `User` → 2 roles |
 | Encapsulation: private correct answer | `_correctOptionIndex`, `_correctOptionIndexes`, `_correctValue` are private fields mapped by EF Core; no getter exists |
 | Polymorphism | abstract `DisplayQuestion()`, `CheckAnswer()`, `Validate()`, virtual `ValidateSelection()`, abstract `User.Role` |
 | Attempt status protected | private setters; changes only via `Start()`, `SubmitAnswer()`, `Finish()`, `Cancel()` |
 | `QuizMasterSystem` | `QuizMaster.UI/QuizMasterSystem.cs` (the web app's equivalent is the layout's navbar plus the role folders) |
 | `FileManager` | replaced by `QuizMasterDbContext` + repositories |
-| `EmailService`, `Logger` | `IEmailService` / `IAppLogger` (Domain) with implementations in Infrastructure |
+| `EmailService`, `Logger` | `IEmailService` → `EmailService` and `IAppLogger` → `DbLogger` (interfaces in Domain, classes in Infrastructure) |
 
 **Validation rules (section 4)**
 
@@ -167,4 +159,5 @@ Or use Test Explorer in Visual Studio. `global.json` switches `dotnet test` to t
 - If time runs out, the quiz finishes with the answers given so far. An unfinished attempt continues when the student starts the quiz again, as long as time is left. Otherwise it is cancelled.
 - A published quiz must be closed before it can be edited. A quiz with attempts can't be deleted (close it instead), and a question that was answered in past attempts can't be removed.
 - Correct answers are never shown, not even to the lecturer. When editing a question, the lecturer enters the correct answer again.
+- A lecturer can delete a student's account. The student's attempts and answers are deleted with it, so their results leave the leaderboards and statistics. The log keeps its rows. Lecturer accounts can't be deleted this way.
 - **Temporary, for easier testing:** the email format isn't checked (any text is accepted, but it must still be unique), and registration asks for the password only once. See `UserService.Register` to switch the check back on.

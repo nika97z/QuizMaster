@@ -48,6 +48,7 @@ namespace QuizMaster.Domain.Models.Enums
 		EmailSent,
 		EmailFailed,
 		Error,
-		QuizGenerated
+		QuizGenerated,
+		StudentDeleted
 	}
 }

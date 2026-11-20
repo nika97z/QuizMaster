@@ -118,5 +118,62 @@ namespace QuizMaster.Tests.Services
 			Assert.Equal(2, result.Id);
 			Assert.Equal(UserRole.Student, result.Role);
 		}
+
+		[Fact]
+		public void GetStudents_ForALecturer_ReturnsTheStudents()
+		{
+			_userRepository.Setup(r => r.GetUserById(1)).Returns(TestData.Lecturer(1));
+			_userRepository.Setup(r => r.GetAllStudents()).Returns(new List<Student> { TestData.Student(2, "luka"), TestData.Student(3, "nino") });
+
+			var students = _userService.GetStudents(1);
+
+			Assert.Equal(new[] { "luka", "nino" }, students.Select(s => s.Username));
+			Assert.All(students, s => Assert.Equal(UserRole.Student, s.Role));
+		}
+
+		[Fact]
+		public void GetStudents_ForAStudent_IsRejected()
+		{
+			_userRepository.Setup(r => r.GetUserById(2)).Returns(TestData.Student(2));
+
+			Assert.Throws<UnauthorizedActionException>(() => _userService.GetStudents(2));
+		}
+
+		[Fact]
+		public void DeleteStudent_ByALecturer_DeletesTheStudentAndLogsIt()
+		{
+			var student = TestData.Student(2, "luka");
+			_userRepository.Setup(r => r.GetUserById(1)).Returns(TestData.Lecturer(1));
+			_userRepository.Setup(r => r.GetStudentWithAttempts(2)).Returns(student);
+
+			_userService.DeleteStudent(1, 2);
+
+			_userRepository.Verify(r => r.DeleteStudent(student), Times.Once);
+			_unitOfWork.Verify(u => u.SaveChanges(), Times.Once);
+			_logger.Verify(l => l.Log(LogEventType.StudentDeleted, It.IsAny<string>(), 1, It.IsAny<int?>(), It.IsAny<int?>()), Times.Once);
+		}
+
+		[Fact]
+		public void DeleteStudent_ByAStudent_IsRejected()
+		{
+			_userRepository.Setup(r => r.GetUserById(2)).Returns(TestData.Student(2));
+
+			Assert.Throws<UnauthorizedActionException>(() => _userService.DeleteStudent(2, 3));
+
+			_userRepository.Verify(r => r.DeleteStudent(It.IsAny<Student>()), Times.Never);
+			_unitOfWork.Verify(u => u.SaveChanges(), Times.Never);
+		}
+
+		// GetStudentWithAttempts finds only students, so an unknown id and a lecturer's id both end here.
+		[Fact]
+		public void DeleteStudent_NotAStudent_IsNotFound()
+		{
+			_userRepository.Setup(r => r.GetUserById(1)).Returns(TestData.Lecturer(1));
+
+			Assert.Throws<NotFoundException>(() => _userService.DeleteStudent(1, 5));
+
+			_userRepository.Verify(r => r.DeleteStudent(It.IsAny<Student>()), Times.Never);
+			_unitOfWork.Verify(u => u.SaveChanges(), Times.Never);
+		}
 	}
 }
