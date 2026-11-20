@@ -1,0 +1,75 @@
+@page
+@model QuizMaster.Web.Pages.Lecturer.CreateQuizModel
+@{
+	ViewData["Title"] = "Create quiz";
+}
+
+<h1 class="h3 mb-3">Create quiz</h1>
+
+<div class="row g-4">
+	<div class="col-lg-6">
+		<div class="card h-100">
+			<div class="card-body">
+				<h2 class="h5 mb-3">Create it yourself</h2>
+				<form method="post">
+					<partial name="_QuizFields" for="Input" />
+					<button type="submit" class="btn btn-primary">Create quiz</button>
+					<a class="btn btn-link" asp-page="/Lecturer/Quizzes">Cancel</a>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div class="col-lg-6">
+		<div class="card h-100 border-primary-subtle">
+			<div class="card-body">
+				<h2 class="h5">Let AI create it</h2>
+				@if (!Model.AiAvailable)
+				{
+					<p class="text-muted mb-0">
+						AI quiz generation isn't set up. Add an OpenAI API key (<code>OpenAI:ApiKey</code>) to
+						<code>appsettings.Local.json</code>.
+					</p>
+				}
+				else
+				{
+					<p class="form-text mt-0">
+						The AI writes the title and the questions with their correct answers. The quiz is saved as a draft,
+						so you can check and edit it before publishing.
+					</p>
+					<form method="post" asp-page-handler="Generate" data-busy-text="The AI is writing the quiz. This can take up to a minute...">
+						<fieldset class="mb-3">
+							<legend class="form-label fs-6">Subject</legend>
+							<div class="form-check">
+								<input class="form-check-input" type="radio" id="subject-mine" name="Ai.RandomSubject" value="false" checked="@(!Model.Ai.RandomSubject)" />
+								<label class="form-check-label" for="subject-mine">This subject:</label>
+							</div>
+							<input class="form-control mb-2" name="Ai.Subject" value="@Model.Ai.Subject" maxlength="@InputLimits.AiSubjectMax"
+								   placeholder="For example: C# interfaces, the French Revolution, photosynthesis" aria-label="Subject" />
+							<div class="form-check">
+								<input class="form-check-input" type="radio" id="subject-random" name="Ai.RandomSubject" value="true" checked="@Model.Ai.RandomSubject" />
+								<label class="form-check-label" for="subject-random">A random subject</label>
+							</div>
+						</fieldset>
+						<div class="row">
+							<div class="col-sm-4 mb-3">
+								<label asp-for="Ai.QuestionCount" class="form-label">Questions</label>
+								<input asp-for="Ai.QuestionCount" type="number" class="form-control" required min="@InputLimits.AiQuestionsMin" max="@InputLimits.AiQuestionsMax" />
+							</div>
+							<div class="col-sm-4 mb-3">
+								<label asp-for="Ai.TimeLimitMinutes" class="form-label">Time limit (min)</label>
+								<input asp-for="Ai.TimeLimitMinutes" type="number" class="form-control" required min="@InputLimits.TimeLimitMin" max="@InputLimits.TimeLimitMax" />
+							</div>
+							<div class="col-sm-4 mb-3">
+								<label asp-for="Ai.PassPercent" class="form-label">Pass percent</label>
+								<input asp-for="Ai.PassPercent" type="number" class="form-control" required min="@InputLimits.PassPercentMin" max="@InputLimits.PassPercentMax" />
+							</div>
+						</div>
+						<button type="submit" class="btn btn-primary">Create with AI</button>
+						<span class="busy-text ms-2 text-muted d-none" role="status"></span>
+					</form>
+				}
+			</div>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,109 @@
+@page
+@model QuizMaster.Web.Pages.Lecturer.QuestionModel
+@{
+	ViewData["Title"] = Model.IsEdit ? "Edit question" : "Add question";
+	var quiz = Model.Quiz;
+}
+
+<div class="row">
+	<div class="col-lg-9">
+		<h1 class="h3 mb-1">@ViewData["Title"]</h1>
+		@if (quiz == null)
+		{
+			<p><a asp-page="/Lecturer/Quizzes">Back to my quizzes</a></p>
+		}
+		else
+		{
+			<p class="text-muted">Quiz: <a asp-page="/Lecturer/Manage" asp-route-quizId="@quiz.Id">@quiz.Title</a></p>
+			if (quiz.IsPublished)
+			{
+				<div class="alert alert-info">This quiz is published. Close it before making changes.</div>
+			}
+
+			if (Model.FormType == null)
+			{
+				<p>Choose the type of the new question:</p>
+				<div class="d-flex flex-wrap gap-2">
+					<a class="btn btn-outline-primary" asp-page="/Lecturer/Question" asp-route-quizId="@quiz.Id" asp-route-type="Single">Single choice</a>
+					<a class="btn btn-outline-primary" asp-page="/Lecturer/Question" asp-route-quizId="@quiz.Id" asp-route-type="Multi">Multiple choice</a>
+					<a class="btn btn-outline-primary" asp-page="/Lecturer/Question" asp-route-quizId="@quiz.Id" asp-route-type="TrueFalse">True/False</a>
+				</div>
+			}
+			else
+			{
+				var type = Model.FormType.Value;
+				var isMulti = type == QuestionType.Multi;
+
+				<form method="post" asp-all-route-data="Model.FormRouteValues">
+					<p class="mb-3">
+						Type: <strong>@DisplayFormat.FormatType(type)</strong>
+						@if (!Model.IsEdit)
+						{
+							<a class="ms-2 small" asp-page="/Lecturer/Question" asp-route-quizId="@quiz.Id">Change type</a>
+						}
+					</p>
+					@if (Model.IsEdit)
+					{
+						<div class="alert alert-secondary">The correct answer is private, so enter it again.</div>
+					}
+
+					<div class="mb-3">
+						<label asp-for="Input.Text" class="form-label">Question text</label>
+						<textarea asp-for="Input.Text" class="form-control" rows="3" required maxlength="@InputLimits.QuestionTextMax"></textarea>
+					</div>
+					<div class="mb-3">
+						<label asp-for="Input.Points" class="form-label">Points</label>
+						<input asp-for="Input.Points" type="number" class="form-control points-input" required min="@InputLimits.PointsMin" max="@InputLimits.PointsMax" />
+					</div>
+
+					@if (type == QuestionType.TrueFalse)
+					{
+						<fieldset class="mb-3">
+							<legend class="form-label fs-6">Correct answer</legend>
+							<div class="form-check form-check-inline">
+								<input class="form-check-input" type="radio" id="answer-true" name="Input.TrueFalseAnswer" value="true" checked="@(Model.Input.TrueFalseAnswer == true)" />
+								<label class="form-check-label" for="answer-true">True</label>
+							</div>
+							<div class="form-check form-check-inline">
+								<input class="form-check-input" type="radio" id="answer-false" name="Input.TrueFalseAnswer" value="false" checked="@(Model.Input.TrueFalseAnswer == false)" />
+								<label class="form-check-label" for="answer-false">False</label>
+							</div>
+						</fieldset>
+					}
+					else
+					{
+						<fieldset class="mb-3">
+							<legend class="form-label fs-6">Options</legend>
+							<p class="form-text mt-0">
+								Fill in at least 2 and up to @InputLimits.MaxOptions options. Blank rows are ignored.
+								@(isMulti ? "Tick every correct option." : "Select the correct option.")
+							</p>
+							@for (var row = 0; row < Model.Input.Options.Count; row++)
+							{
+								<div class="input-group mb-2">
+									<div class="input-group-text" title="Correct">
+										@if (isMulti)
+										{
+											<input class="form-check-input mt-0" type="checkbox" name="Input.CorrectRows" value="@row"
+												   checked="@Model.Input.CorrectRows.Contains(row)" aria-label="Option @(row + 1) is correct" />
+										}
+										else
+										{
+											<input class="form-check-input mt-0" type="radio" name="Input.CorrectRow" value="@row"
+												   checked="@(Model.Input.CorrectRow == row)" aria-label="Option @(row + 1) is correct" />
+										}
+									</div>
+									<input class="form-control" name="Input.Options[@row]" value="@Model.Input.Options[row]"
+										   maxlength="@InputLimits.OptionTextMax" placeholder="Option @(row + 1)" aria-label="Option @(row + 1)" />
+								</div>
+							}
+						</fieldset>
+					}
+
+					<button type="submit" class="btn btn-primary" disabled="@quiz.IsPublished">Save question</button>
+					<a class="btn btn-link" asp-page="/Lecturer/Manage" asp-route-quizId="@quiz.Id">Cancel</a>
+				</form>
+			}
+		}
+	</div>
+</div>

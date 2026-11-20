@@ -1,0 +1,15 @@
+﻿@page
+@model IndexModel
+@{
+	ViewData["Title"] = "Welcome";
+}
+
+<div class="text-center py-4">
+	<h1 class="display-5">Welcome to QuizMaster</h1>
+	<p class="lead">
+		Lecturers create quizzes. Students take them and get a score, a Passed/Failed result, a result email
+		and, on a pass, a certificate code.
+	</p>
+	<a class="btn btn-primary btn-lg me-2" asp-page="/Account/Login">Log in</a>
+	<a class="btn btn-outline-primary btn-lg" asp-page="/Account/Register">Register</a>
+</div>

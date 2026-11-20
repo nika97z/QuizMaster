@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>@ViewData["Title"] - QuizMaster</title>
+	<script type="importmap"></script>
+	<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+	<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+	<link rel="stylesheet" href="~/QuizMaster.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+	<header>
+		<nav class="navbar navbar-expand-md navbar-toggleable-md navbar-light bg-white border-bottom box-shadow mb-3">
+			<div class="container">
+				<a class="navbar-brand" asp-page="/Index">QuizMaster</a>
+				<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+						aria-expanded="false" aria-label="Toggle navigation">
+					<span class="navbar-toggler-icon"></span>
+				</button>
+				<div class="navbar-collapse collapse d-md-inline-flex justify-content-between">
+					<ul class="navbar-nav flex-grow-1">
+						@if (User.IsInRole(UserClaims.StudentRole))
+						{
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Student/Quizzes">Quizzes</a></li>
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Student/Attempts">My attempts</a></li>
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Leaderboards">Leaderboards</a></li>
+						}
+						else if (User.IsInRole(UserClaims.LecturerRole))
+						{
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Lecturer/Quizzes">My quizzes</a></li>
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Lecturer/CreateQuiz">Create quiz</a></li>
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Lecturer/Statistics">Statistics</a></li>
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Leaderboards">Leaderboards</a></li>
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Lecturer/Logs">Logs</a></li>
+						}
+						else
+						{
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Index">Home</a></li>
+						}
+					</ul>
+					@if (User.Identity?.IsAuthenticated == true)
+					{
+						<div class="d-flex align-items-center gap-2">
+							<span class="navbar-text">Signed in as <strong>@User.Identity.Name</strong> (@User.GetRole())</span>
+							<form method="post" asp-page="/Account/Logout">
+								<button type="submit" class="btn btn-sm btn-outline-secondary">Log out</button>
+							</form>
+						</div>
+					}
+					else
+					{
+						<ul class="navbar-nav">
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Account/Login">Log in</a></li>
+							<li class="nav-item"><a class="nav-link text-dark" asp-page="/Account/Register">Register</a></li>
+						</ul>
+					}
+				</div>
+			</div>
+		</nav>
+	</header>
+	<div class="container">
+		<main role="main" class="pb-3">
+			<partial name="_StatusMessages" />
+			@RenderBody()
+		</main>
+	</div>
+
+	<footer class="border-top footer text-muted">
+		<div class="container">
+			&copy; 2026 - QuizMaster
+		</div>
+	</footer>
+
+	<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+	<script src="~/js/site.js" asp-append-version="true"></script>
+
+	@await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,102 @@
+@page
+@model LeaderboardsModel
+@{
+	ViewData["Title"] = "Leaderboards";
+}
+
+<h1 class="h3">Overall leaderboard</h1>
+<p class="text-muted">Best score per quiz, from finished attempts.</p>
+
+@if (Model.Overall.Count == 0)
+{
+	<p>No finished attempts yet.</p>
+}
+else
+{
+	<div class="table-responsive mb-4">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th class="text-end">Rank</th>
+					<th>Student</th>
+					<th class="text-end">Total best score</th>
+					<th class="text-end">Average %</th>
+					<th class="text-end">Quizzes</th>
+					<th class="text-end">Attempts</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var entry in Model.Overall)
+				{
+					<tr>
+						<td class="text-end">@entry.Rank</td>
+						<td>@entry.Username</td>
+						<td class="text-end">@entry.TotalBestScore</td>
+						<td class="text-end">@DisplayFormat.FormatPercent(entry.AveragePercent)</td>
+						<td class="text-end">@entry.QuizzesTaken</td>
+						<td class="text-end">@entry.AttemptCount</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+<h2 class="h4">Quiz leaderboard</h2>
+@if (Model.QuizChoices.Count == 0)
+{
+	<p>There are no quizzes yet.</p>
+}
+else
+{
+	<form method="get" class="row g-2 align-items-end mb-3">
+		<div class="col-sm-8 col-md-6">
+			<label asp-for="QuizId" class="form-label">Quiz</label>
+			<select asp-for="QuizId" asp-items="Model.QuizItems" class="form-select">
+				<option value="">Choose a quiz</option>
+			</select>
+		</div>
+		<div class="col-auto">
+			<button type="submit" class="btn btn-primary">Show</button>
+		</div>
+	</form>
+}
+
+@if (Model.SelectedQuiz != null)
+{
+	<h3 class="h5">@Model.SelectedQuiz.Title</h3>
+	if (Model.QuizEntries.Count == 0)
+	{
+		<p>No finished attempts yet.</p>
+	}
+	else
+	{
+		<div class="table-responsive">
+			<table class="table table-striped align-middle">
+				<thead>
+					<tr>
+						<th class="text-end">Rank</th>
+						<th>Student</th>
+						<th class="text-end">Score</th>
+						<th class="text-end">Percent</th>
+						<th class="text-end">Time</th>
+						<th>Finished</th>
+					</tr>
+				</thead>
+				<tbody>
+					@foreach (var entry in Model.QuizEntries)
+					{
+						<tr>
+							<td class="text-end">@entry.Rank</td>
+							<td>@entry.Username</td>
+							<td class="text-end">@entry.Score/@entry.MaxScore</td>
+							<td class="text-end">@DisplayFormat.FormatPercent(entry.Percent)</td>
+							<td class="text-end">@DisplayFormat.FormatDuration(entry.Duration)</td>
+							<td>@DisplayFormat.FormatDate(entry.FinishedAt)</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+}

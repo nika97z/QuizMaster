@@ -1,0 +1,115 @@
+@page
+@model QuizMaster.Web.Pages.Lecturer.StatisticsModel
+@{
+	ViewData["Title"] = "Statistics";
+}
+
+<h1 class="h3">Statistics</h1>
+<p class="text-muted">From finished attempts.</p>
+
+<div class="row g-3 mb-4">
+	<div class="col-sm-6 col-lg-3">
+		<div class="card h-100">
+			<div class="card-body">
+				<div class="text-muted small">Average score</div>
+				<div class="fs-4">@Model.AverageScore</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-sm-6 col-lg-3">
+		<div class="card h-100">
+			<div class="card-body">
+				<div class="text-muted small">Average percent</div>
+				<div class="fs-4">@DisplayFormat.FormatPercent(Model.AveragePercent)</div>
+			</div>
+		</div>
+	</div>
+	<div class="col-lg-6">
+		<div class="card h-100">
+			<div class="card-body">
+				<div class="text-muted small">Best student</div>
+				@if (Model.BestStudent == null)
+				{
+					<div class="fs-4">-</div>
+				}
+				else
+				{
+					<div class="fs-4">@Model.BestStudent.Username</div>
+					<div>Total best score @Model.BestStudent.TotalBestScore, average @DisplayFormat.FormatPercent(Model.BestStudent.AveragePercent)</div>
+				}
+			</div>
+		</div>
+	</div>
+</div>
+
+<h2 class="h4">Results by quiz</h2>
+@if (Model.ByQuiz.Count == 0)
+{
+	<p>No finished attempts yet.</p>
+}
+else
+{
+	<div class="table-responsive mb-4">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>Quiz</th>
+					<th>Topic</th>
+					<th class="text-end">Attempts</th>
+					<th class="text-end">Avg score</th>
+					<th class="text-end">Avg %</th>
+					<th class="text-end">Pass rate</th>
+					<th>Best student</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var quiz in Model.ByQuiz)
+				{
+					<tr>
+						<td>@quiz.Title</td>
+						<td>@quiz.Topic</td>
+						<td class="text-end">@quiz.AttemptCount</td>
+						<td class="text-end">@quiz.AverageScore</td>
+						<td class="text-end">@DisplayFormat.FormatPercent(quiz.AveragePercent)</td>
+						<td class="text-end">@DisplayFormat.FormatPercent(quiz.PassRate)</td>
+						<td>@quiz.BestStudent</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+<h2 class="h4">Results by topic</h2>
+@if (Model.ByTopic.Count == 0)
+{
+	<p>No finished attempts yet.</p>
+}
+else
+{
+	<div class="table-responsive">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>Topic</th>
+					<th class="text-end">Quizzes</th>
+					<th class="text-end">Attempts</th>
+					<th class="text-end">Avg %</th>
+					<th class="text-end">Pass rate</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var topic in Model.ByTopic)
+				{
+					<tr>
+						<td>@topic.Topic</td>
+						<td class="text-end">@topic.QuizCount</td>
+						<td class="text-end">@topic.AttemptCount</td>
+						<td class="text-end">@DisplayFormat.FormatPercent(topic.AveragePercent)</td>
+						<td class="text-end">@DisplayFormat.FormatPercent(topic.PassRate)</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

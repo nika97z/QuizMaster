@@ -1,0 +1,56 @@
+@page
+@model QuizMaster.Web.Pages.Student.AttemptsModel
+@{
+	ViewData["Title"] = "My attempts";
+}
+
+<h1 class="h3 mb-3">My attempts</h1>
+
+@if (Model.Attempts.Count == 0)
+{
+	<p>You haven't taken a quiz yet. <a asp-page="/Student/Quizzes">Open the quiz catalog</a>.</p>
+}
+else
+{
+	<div class="table-responsive">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>Quiz</th>
+					<th>Started</th>
+					<th>Finished</th>
+					<th>Status</th>
+					<th class="text-end">Score</th>
+					<th class="text-end">Percent</th>
+					<th>Result</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var attempt in Model.Attempts)
+				{
+					var finished = attempt.Status == AttemptStatus.Finished;
+					<tr>
+						<td>@attempt.QuizTitle</td>
+						<td>@DisplayFormat.FormatDate(attempt.StartedAt)</td>
+						<td>@DisplayFormat.FormatDate(attempt.FinishedAt)</td>
+						<td>@attempt.Status</td>
+						<td class="text-end">@(finished ? $"{attempt.Score}/{attempt.MaxScore}" : "-")</td>
+						<td class="text-end">@(finished ? DisplayFormat.FormatPercent(attempt.Percent) : "-")</td>
+						<td>@DisplayFormat.FormatResult(attempt.Result)</td>
+						<td class="text-end">
+							@if (finished)
+							{
+								<a asp-page="/Student/Result" asp-route-attemptId="@attempt.Id">View result</a>
+							}
+							else if (attempt.Status == AttemptStatus.InProgress)
+							{
+								<a asp-page="/Student/Take" asp-route-attemptId="@attempt.Id">Continue</a>
+							}
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

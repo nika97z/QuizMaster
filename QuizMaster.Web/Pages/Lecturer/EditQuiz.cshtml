@@ -1,0 +1,27 @@
+@page "{quizId:int}"
+@model QuizMaster.Web.Pages.Lecturer.EditQuizModel
+@{
+	ViewData["Title"] = "Edit quiz";
+}
+
+<div class="row">
+	<div class="col-lg-8">
+		<h1 class="h3 mb-3">Edit quiz</h1>
+		@if (Model.ShowForm)
+		{
+			if (Model.IsPublished)
+			{
+				<div class="alert alert-info">This quiz is published. Close it before making changes.</div>
+			}
+			<form method="post" asp-route-quizId="@Model.QuizId">
+				<partial name="_QuizFields" for="Input" />
+				<button type="submit" class="btn btn-primary" disabled="@Model.IsPublished">Save changes</button>
+				<a class="btn btn-link" asp-page="/Lecturer/Manage" asp-route-quizId="@Model.QuizId">Cancel</a>
+			</form>
+		}
+		else
+		{
+			<p><a asp-page="/Lecturer/Quizzes">Back to my quizzes</a></p>
+		}
+	</div>
+</div>

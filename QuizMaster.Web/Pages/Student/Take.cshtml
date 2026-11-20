@@ -1,0 +1,79 @@
+@page "{attemptId:int}"
+@model QuizMaster.Web.Pages.Student.TakeModel
+@{
+	ViewData["Title"] = Model.Session?.QuizTitle ?? "Take a quiz";
+	var session = Model.Session;
+	var question = Model.CurrentQuestion;
+}
+
+@if (session == null)
+{
+	<p><a asp-page="/Student/Attempts">My attempts</a> · <a asp-page="/Student/Quizzes">Quiz catalog</a></p>
+}
+else
+{
+	<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2 mb-3">
+		<h1 class="h3 mb-0">@session.QuizTitle</h1>
+		@if (!Model.TimeIsUp && question != null)
+		{
+			<div class="fs-5">
+				Time left:
+				<strong id="countdown" class="countdown" data-seconds-left="@Model.SecondsLeft" data-finish-form="finish-form">@DisplayFormat.FormatDuration(TimeSpan.FromSeconds(Model.SecondsLeft))</strong>
+			</div>
+		}
+	</div>
+
+	if (Model.TimeIsUp)
+	{
+		<div class="alert alert-warning">
+			<strong>Time is up!</strong> Answers are no longer accepted. Finish the quiz to see your result with the answers you gave.
+		</div>
+		<form method="post" asp-page-handler="Finish" asp-route-attemptId="@Model.AttemptId">
+			<button type="submit" class="btn btn-primary">Finish and see the result</button>
+		</form>
+	}
+	else if (question == null)
+	{
+		<p>You answered all @session.TotalQuestions questions.</p>
+		<form method="post" asp-page-handler="Finish" asp-route-attemptId="@Model.AttemptId">
+			<button type="submit" class="btn btn-primary">Finish and see the result</button>
+		</form>
+	}
+	else
+	{
+		var isMulti = question.Type == QuestionType.Multi;
+		var isLast = session.Questions.Count == 1;
+
+		<p class="text-muted mb-2">Question @(session.AnsweredCount + 1) of @session.TotalQuestions</p>
+		<form method="post" asp-page-handler="Answer" asp-route-attemptId="@Model.AttemptId">
+			<input type="hidden" name="questionId" value="@question.Id" />
+			<div class="card mb-3">
+				<div class="card-body">
+					<fieldset>
+						<legend class="fs-5 preserve-lines">@question.Text</legend>
+						<p class="text-muted small">@DisplayFormat.FormatPoints(question.Points) · @DisplayFormat.FormatInstruction(question.Type)</p>
+						@foreach (var option in question.Options)
+						{
+							@* The value is the option's original Position, not its place on the screen: the options are shuffled. *@
+							<div class="form-check mb-2">
+								<input class="form-check-input" type="@(isMulti ? "checkbox" : "radio")" name="selected" id="option-@option.Position"
+									   value="@option.Position" checked="@Model.SelectedPositions.Contains(option.Position)" />
+								<label class="form-check-label" for="option-@option.Position">@option.Text</label>
+							</div>
+						}
+					</fieldset>
+				</div>
+			</div>
+			<button type="submit" class="btn btn-primary">@(isLast ? "Save answer and finish" : "Save answer")</button>
+		</form>
+
+		<form method="post" asp-page-handler="Quit" asp-route-attemptId="@Model.AttemptId" class="mt-4"
+			  data-confirm="Quit now? Your attempt will be cancelled.">
+			<button type="submit" class="btn btn-sm btn-outline-danger">Quit</button>
+			<span class="form-text ms-2">You can also leave this page: the attempt continues while time is left.</span>
+		</form>
+
+		@* The countdown submits this form when it reaches zero. *@
+		<form id="finish-form" method="post" asp-page-handler="Finish" asp-route-attemptId="@Model.AttemptId"></form>
+	}
+}

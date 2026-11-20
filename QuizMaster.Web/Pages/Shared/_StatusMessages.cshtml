@@ -1,0 +1,48 @@
+@*
+	Messages shown at the top of every page:
+	- success, warning and error messages from TempData (set before a redirect);
+	- the validation summary: errors of this request (service errors and form checks) from ModelState.
+*@
+@{
+	var successes = TempData.Read(FlashMessages.SuccessKey);
+	var warnings = TempData.Read(FlashMessages.WarningKey);
+	var errors = TempData.Read(FlashMessages.ErrorKey).ToList();
+	errors.AddRange(ViewContext.ViewData.ModelState.Values
+		.SelectMany(entry => entry.Errors)
+		.Select(error => error.ErrorMessage)
+		.Where(message => !string.IsNullOrWhiteSpace(message)));
+}
+@if (successes.Count > 0)
+{
+	<div class="alert alert-success" role="status">
+		@foreach (var message in successes)
+		{
+			<div>@message</div>
+		}
+	</div>
+}
+@if (warnings.Count > 0)
+{
+	<div class="alert alert-warning" role="status">
+		@foreach (var message in warnings)
+		{
+			<div>@message</div>
+		}
+	</div>
+}
+@if (errors.Count == 1)
+{
+	<div class="alert alert-danger validation-summary" role="alert">@errors[0]</div>
+}
+else if (errors.Count > 1)
+{
+	<div class="alert alert-danger validation-summary" role="alert">
+		<div>Please fix the following:</div>
+		<ul class="mb-0">
+			@foreach (var message in errors)
+			{
+				<li>@message</li>
+			}
+		</ul>
+	</div>
+}

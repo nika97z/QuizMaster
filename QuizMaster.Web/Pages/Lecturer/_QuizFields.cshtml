@@ -1,0 +1,23 @@
+@model QuizMaster.Web.Pages.Lecturer.QuizInput
+@* The fields of the quiz form. Use it as <partial name="_QuizFields" for="Input" />, so the field names keep the "Input." prefix. *@
+
+<div class="mb-3">
+	<label asp-for="Title" class="form-label">Title</label>
+	<input asp-for="Title" class="form-control" required maxlength="@InputLimits.TitleMax" />
+</div>
+<div class="mb-3">
+	<label asp-for="Topic" class="form-label">Topic</label>
+	<input asp-for="Topic" class="form-control" required maxlength="@InputLimits.TopicMax" />
+</div>
+<div class="row">
+	<div class="col-sm-6 mb-3">
+		<label asp-for="TimeLimitMinutes" class="form-label">Time limit (minutes)</label>
+		<input asp-for="TimeLimitMinutes" type="number" class="form-control" required min="@InputLimits.TimeLimitMin" max="@InputLimits.TimeLimitMax" />
+		<div class="form-text">@InputLimits.TimeLimitMin-@InputLimits.TimeLimitMax minutes.</div>
+	</div>
+	<div class="col-sm-6 mb-3">
+		<label asp-for="PassPercent" class="form-label">Pass percent</label>
+		<input asp-for="PassPercent" type="number" class="form-control" required min="@InputLimits.PassPercentMin" max="@InputLimits.PassPercentMax" />
+		<div class="form-text">@InputLimits.PassPercentMin-@InputLimits.PassPercentMax.</div>
+	</div>
+</div>

@@ -1,0 +1,51 @@
+@page
+@model QuizMaster.Web.Pages.Lecturer.QuizzesModel
+@{
+	ViewData["Title"] = "My quizzes";
+}
+
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+	<h1 class="h3 mb-0">My quizzes</h1>
+	<a class="btn btn-primary" asp-page="/Lecturer/CreateQuiz">Create quiz</a>
+</div>
+
+@if (Model.Quizzes.Count == 0)
+{
+	<p>You have no quizzes yet.</p>
+}
+else
+{
+	<div class="table-responsive">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>Title</th>
+					<th>Topic</th>
+					<th class="text-end">Questions</th>
+					<th class="text-end">Max score</th>
+					<th class="text-end">Time limit</th>
+					<th class="text-end">Pass %</th>
+					<th>Status</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var quiz in Model.Quizzes)
+				{
+					<tr>
+						<td>@quiz.Title</td>
+						<td>@quiz.Topic</td>
+						<td class="text-end">@quiz.QuestionCount</td>
+						<td class="text-end">@quiz.MaxScore</td>
+						<td class="text-end">@quiz.TimeLimitMinutes min</td>
+						<td class="text-end">@quiz.PassPercent%</td>
+						<td>
+							<span class="badge @(quiz.IsPublished ? "bg-success" : "bg-secondary")">@DisplayFormat.FormatQuizStatus(quiz.IsPublished)</span>
+						</td>
+						<td class="text-end"><a asp-page="/Lecturer/Manage" asp-route-quizId="@quiz.Id">Manage</a></td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

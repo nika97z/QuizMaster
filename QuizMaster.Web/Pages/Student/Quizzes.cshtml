@@ -1,0 +1,49 @@
+@page
+@model QuizMaster.Web.Pages.Student.QuizzesModel
+@{
+	ViewData["Title"] = "Quiz catalog";
+}
+
+<h1 class="h3 mb-3">Quiz catalog</h1>
+
+@if (Model.Quizzes.Count == 0)
+{
+	<p>There are no published quizzes yet.</p>
+}
+else
+{
+	<div class="table-responsive">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>Title</th>
+					<th>Topic</th>
+					<th class="text-end">Questions</th>
+					<th class="text-end">Max score</th>
+					<th class="text-end">Time limit</th>
+					<th class="text-end">Pass %</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var quiz in Model.Quizzes)
+				{
+					<tr>
+						<td>@quiz.Title</td>
+						<td>@quiz.Topic</td>
+						<td class="text-end">@quiz.QuestionCount</td>
+						<td class="text-end">@quiz.MaxScore</td>
+						<td class="text-end">@quiz.TimeLimitMinutes min</td>
+						<td class="text-end">@quiz.PassPercent%</td>
+						<td class="text-end">
+							<form method="post" asp-page-handler="Start" asp-route-quizId="@quiz.Id"
+								  data-confirm="@($"Start \"{quiz.Title}\" ({quiz.QuestionCount} questions, {quiz.TimeLimitMinutes} min, pass mark {quiz.PassPercent}%)?")">
+								<button type="submit" class="btn btn-sm btn-primary">Start</button>
+							</form>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

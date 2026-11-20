@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+TestResults/
+
+# Local secrets (SMTP password and so on)
+appsettings.Local.json

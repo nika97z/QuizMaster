@@ -1,0 +1,19 @@
+@page
+@model QuizMaster.Web.Pages.Account.AccessDeniedModel
+@{
+	ViewData["Title"] = "Access denied";
+}
+
+<h1 class="h3">Access denied</h1>
+<p>You don't have access to this page.</p>
+@if (User.Identity?.IsAuthenticated == true)
+{
+	<p>
+		You are signed in as <strong>@User.Identity.Name</strong> (@User.GetRole()).
+		<a asp-page="@User.StartPage()">Go to your start page</a>.
+	</p>
+}
+else
+{
+	<p><a asp-page="/Account/Login">Log in</a></p>
+}

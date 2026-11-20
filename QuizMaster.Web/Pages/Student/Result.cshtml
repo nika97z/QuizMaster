@@ -1,0 +1,90 @@
+@page "{attemptId:int}"
+@model QuizMaster.Web.Pages.Student.ResultModel
+@{
+	ViewData["Title"] = "Result";
+	var result = Model.Result;
+}
+
+@if (result != null)
+{
+	<h1 class="h3 mb-3">Result: @result.QuizTitle</h1>
+
+	<div class="card mb-4">
+		<div class="card-body">
+			<div class="row g-3 align-items-center">
+				<div class="col-sm-auto">
+					<div class="display-6">@result.Score / @result.MaxScore</div>
+				</div>
+				<div class="col-sm">
+					<div>Percent: <strong>@DisplayFormat.FormatPercent(result.Percent)</strong> (pass mark @result.PassPercent%)</div>
+					<div>Correct: @result.CorrectCount · Incorrect: @result.IncorrectCount (of @result.TotalQuestions)</div>
+				</div>
+				<div class="col-sm-auto">
+					@if (result.Result == AttemptResult.Passed)
+					{
+						<span class="badge bg-success fs-5">PASSED</span>
+					}
+					else
+					{
+						<span class="badge bg-danger fs-5">FAILED</span>
+					}
+				</div>
+			</div>
+
+			@if (result.Result == AttemptResult.Passed && result.CertificateCode != null)
+			{
+				<p class="mt-3 mb-0">Certificate code: <code class="fs-5">@result.CertificateCode</code></p>
+			}
+			@if (result.TimedOut)
+			{
+				<p class="mt-3 mb-0 text-warning-emphasis">The time limit was reached.</p>
+			}
+			@if (Model.EmailSent == true)
+			{
+				<p class="mt-3 mb-0">Your result was emailed to you.</p>
+			}
+			else if (Model.EmailSent == false)
+			{
+				<p class="mt-3 mb-0 text-warning-emphasis">The result email couldn't be sent. The problem was logged.</p>
+			}
+		</div>
+	</div>
+
+	<h2 class="h5">Your answers</h2>
+	<div class="table-responsive">
+		<table class="table table-striped align-middle">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>Question</th>
+					<th>Your answer</th>
+					<th>Result</th>
+					<th class="text-end">Points</th>
+				</tr>
+			</thead>
+			<tbody>
+				@foreach (var answer in result.Review)
+				{
+					<tr>
+						<td>@answer.Number</td>
+						<td class="preserve-lines">@answer.QuestionText</td>
+						<td>@answer.YourAnswer</td>
+						<td>
+							@if (answer.IsCorrect)
+							{
+								<span class="text-success">Correct</span>
+							}
+							else
+							{
+								<span class="text-danger">Incorrect</span>
+							}
+						</td>
+						<td class="text-end">@answer.PointsAwarded/@answer.Points</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
+<p><a asp-page="/Student/Attempts">My attempts</a> · <a asp-page="/Student/Quizzes">Quiz catalog</a></p>
